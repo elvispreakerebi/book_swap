@@ -72,10 +72,7 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       _status = AuthStatus.error;
-      final errorStr = e.toString();
-      _errorMessage = errorStr.startsWith('Exception: ')
-          ? errorStr.replaceFirst('Exception: ', '')
-          : errorStr;
+      _errorMessage = e.toString();
     }
     notifyListeners();
   }

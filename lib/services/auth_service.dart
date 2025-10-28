@@ -14,7 +14,9 @@ class AuthService {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      throw Exception(e.message ?? 'Failed to register');
+      // Handle errors
+      print(e.message);
+      return null;
     }
   }
 
@@ -26,7 +28,9 @@ class AuthService {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      throw Exception(e.message ?? 'Failed to login');
+      // Handle errors
+      print(e.message);
+      return null;
     }
   }
 
