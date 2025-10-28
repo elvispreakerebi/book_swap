@@ -39,6 +39,7 @@ class ListingDetailsScreen extends StatelessWidget {
 
   void _showSwapOffersModal(
     BuildContext context,
+    BuildContext rootContext,
     SwapOffersProvider provider,
     String listingId,
     BookListing listing,
@@ -54,6 +55,7 @@ class ListingDetailsScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             final offers = provider.listingOffers;
+            final Map<String, bool> loading = {};
             return Padding(
               padding: MediaQuery.of(
                 context,
@@ -120,135 +122,170 @@ class ListingDetailsScreen extends StatelessWidget {
                                         foregroundColor: Colors.white,
                                         minimumSize: const Size(0, 38),
                                       ),
-                                      onPressed: () async {
-                                        // Accept button pressed
-                                        // Accept this offer
-                                        await FirebaseFirestore.instance
-                                            .collection('swap_offers')
-                                            .doc(offer.offerId)
-                                            .update({'state': 'accepted'});
-                                        // Fetch displayName for the snack
-                                        final userSnap = await FirebaseFirestore
-                                            .instance
-                                            .collection('users')
-                                            .doc(offer.fromUserId)
-                                            .get();
-                                        final displayName =
-                                            (userSnap.data()?['displayName']
-                                                    as String?)
-                                                ?.trim() ??
-                                            'user';
-                                        // Send notification to initiator
-                                        final notif = AppNotification(
-                                          id: DateTime.now()
-                                              .millisecondsSinceEpoch
-                                              .toString(),
-                                          userId: offer.fromUserId,
-                                          type:
-                                              AppNotificationType.offerAccepted,
-                                          title: 'Swap Offer Accepted',
-                                          body:
-                                              'Your swap offer for ${listing.title} was accepted.',
-                                          data: {
-                                            'listingId': listing.id,
-                                            'offerId': offer.offerId,
-                                          },
-                                          read: false,
-                                          createdAt: DateTime.now(),
-                                        );
-                                        await Provider.of<
-                                              NotificationsProvider
-                                            >(context, listen: false)
-                                            .createNotification(notif);
+                                      onPressed:
+                                          (loading[offer.offerId] == true)
+                                          ? null
+                                          : () async {
+                                              setState(
+                                                () => loading[offer.offerId] =
+                                                    true,
+                                              );
+                                              // Accept button pressed
+                                              // Accept this offer
+                                              await FirebaseFirestore.instance
+                                                  .collection('swap_offers')
+                                                  .doc(offer.offerId)
+                                                  .update({
+                                                    'state': 'accepted',
+                                                  });
+                                              // Fetch displayName for the snack
+                                              final userSnap =
+                                                  await FirebaseFirestore
+                                                      .instance
+                                                      .collection('users')
+                                                      .doc(offer.fromUserId)
+                                                      .get();
+                                              final displayName =
+                                                  (userSnap.data()?['displayName']
+                                                          as String?)
+                                                      ?.trim() ??
+                                                  'user';
+                                              // Send notification to initiator
+                                              final notif = AppNotification(
+                                                id: DateTime.now()
+                                                    .millisecondsSinceEpoch
+                                                    .toString(),
+                                                userId: offer.fromUserId,
+                                                type: AppNotificationType
+                                                    .offerAccepted,
+                                                title: 'Swap Offer Accepted',
+                                                body:
+                                                    'Your swap offer for ${listing.title} was accepted.',
+                                                data: {
+                                                  'listingId': listing.id,
+                                                  'offerId': offer.offerId,
+                                                },
+                                                read: false,
+                                                createdAt: DateTime.now(),
+                                              );
+                                              await Provider.of<
+                                                    NotificationsProvider
+                                                  >(context, listen: false)
+                                                  .createNotification(notif);
 
-                                        // Reject all other pending offers on this listing and notify their users
-                                        final snapshot = await FirebaseFirestore
-                                            .instance
-                                            .collection('swap_offers')
-                                            .where(
-                                              'listingId',
-                                              isEqualTo: listing.id,
+                                              // Reject all other pending offers on this listing and notify their users
+                                              final snapshot =
+                                                  await FirebaseFirestore
+                                                      .instance
+                                                      .collection('swap_offers')
+                                                      .where(
+                                                        'listingId',
+                                                        isEqualTo: listing.id,
+                                                      )
+                                                      .get();
+                                              for (var doc in snapshot.docs) {
+                                                final data = doc.data();
+                                                if (doc.id != offer.offerId &&
+                                                    data['state'] ==
+                                                        'pending') {
+                                                  await doc.reference.update({
+                                                    'state': 'cancelled',
+                                                  });
+                                                  final theirUserSnap =
+                                                      await FirebaseFirestore
+                                                          .instance
+                                                          .collection('users')
+                                                          .doc(
+                                                            data['fromUserId'],
+                                                          )
+                                                          .get();
+                                                  final theirDisplayName =
+                                                      (theirUserSnap
+                                                                  .data()?['displayName']
+                                                              as String?)
+                                                          ?.trim() ??
+                                                      'user';
+                                                  final rejectedNotif = AppNotification(
+                                                    id: DateTime.now()
+                                                        .millisecondsSinceEpoch
+                                                        .toString(),
+                                                    userId: data['fromUserId'],
+                                                    type: AppNotificationType
+                                                        .offerRejected,
+                                                    title:
+                                                        'Swap Offer Rejected',
+                                                    body:
+                                                        'Your swap offer for ${listing.title} was rejected.',
+                                                    data: {
+                                                      'listingId': listing.id,
+                                                      'offerId': doc.id,
+                                                    },
+                                                    read: false,
+                                                    createdAt: DateTime.now(),
+                                                  );
+                                                  await Provider.of<
+                                                        NotificationsProvider
+                                                      >(context, listen: false)
+                                                      .createNotification(
+                                                        rejectedNotif,
+                                                      );
+                                                }
+                                              }
+
+                                              // Locally update state so UI disables all accept buttons, etc
+                                              setState(() {
+                                                for (
+                                                  int i = 0;
+                                                  i <
+                                                      provider
+                                                          .listingOffers
+                                                          .length;
+                                                  i++
+                                                ) {
+                                                  final o =
+                                                      provider.listingOffers[i];
+                                                  if (o.offerId ==
+                                                      offer.offerId) {
+                                                    provider.listingOffers[i] =
+                                                        o.copyWith(
+                                                          state: SwapOfferState
+                                                              .accepted,
+                                                        );
+                                                  } else if (o.state ==
+                                                      SwapOfferState.pending) {
+                                                    provider.listingOffers[i] =
+                                                        o.copyWith(
+                                                          state: SwapOfferState
+                                                              .cancelled,
+                                                        );
+                                                  }
+                                                }
+                                              });
+                                              setState(
+                                                () => loading[offer.offerId] =
+                                                    false,
+                                              );
+                                              Navigator.of(context).pop();
+                                              ScaffoldMessenger.of(
+                                                rootContext,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Offer successfully accepted. $displayName has been notified.',
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                      child: loading[offer.offerId] == true
+                                          ? const SizedBox(
+                                              width: 22,
+                                              height: 22,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2.2,
+                                              ),
                                             )
-                                            .get();
-                                        for (var doc in snapshot.docs) {
-                                          final data = doc.data();
-                                          if (doc.id != offer.offerId &&
-                                              data['state'] == 'pending') {
-                                            await doc.reference.update({
-                                              'state': 'cancelled',
-                                            });
-                                            final theirUserSnap =
-                                                await FirebaseFirestore.instance
-                                                    .collection('users')
-                                                    .doc(data['fromUserId'])
-                                                    .get();
-                                            final theirDisplayName =
-                                                (theirUserSnap
-                                                            .data()?['displayName']
-                                                        as String?)
-                                                    ?.trim() ??
-                                                'user';
-                                            final rejectedNotif = AppNotification(
-                                              id: DateTime.now()
-                                                  .millisecondsSinceEpoch
-                                                  .toString(),
-                                              userId: data['fromUserId'],
-                                              type: AppNotificationType
-                                                  .offerRejected,
-                                              title: 'Swap Offer Rejected',
-                                              body:
-                                                  'Your swap offer for ${listing.title} was rejected.',
-                                              data: {
-                                                'listingId': listing.id,
-                                                'offerId': doc.id,
-                                              },
-                                              read: false,
-                                              createdAt: DateTime.now(),
-                                            );
-                                            await Provider.of<
-                                                  NotificationsProvider
-                                                >(context, listen: false)
-                                                .createNotification(
-                                                  rejectedNotif,
-                                                );
-                                          }
-                                        }
-
-                                        // Locally update state so UI disables all accept buttons, etc
-                                        setState(() {
-                                          for (
-                                            int i = 0;
-                                            i < provider.listingOffers.length;
-                                            i++
-                                          ) {
-                                            final o = provider.listingOffers[i];
-                                            if (o.offerId == offer.offerId) {
-                                              provider.listingOffers[i] = o
-                                                  .copyWith(
-                                                    state:
-                                                        SwapOfferState.accepted,
-                                                  );
-                                            } else if (o.state ==
-                                                SwapOfferState.pending) {
-                                              provider.listingOffers[i] = o
-                                                  .copyWith(
-                                                    state: SwapOfferState
-                                                        .cancelled,
-                                                  );
-                                            }
-                                          }
-                                        });
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Offer successfully accepted. $displayName has been notified.',
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      child: const Text('Accept'),
+                                          : const Text('Accept'),
                                     ),
                                     const SizedBox(width: 10),
                                     OutlinedButton(
@@ -256,64 +293,90 @@ class ListingDetailsScreen extends StatelessWidget {
                                         foregroundColor: Colors.red,
                                         minimumSize: const Size(0, 38),
                                       ),
-                                      onPressed: () async {
-                                        await FirebaseFirestore.instance
-                                            .collection('swap_offers')
-                                            .doc(offer.offerId)
-                                            .update({'state': 'cancelled'});
-                                        final userSnap = await FirebaseFirestore
-                                            .instance
-                                            .collection('users')
-                                            .doc(offer.fromUserId)
-                                            .get();
-                                        final displayName =
-                                            (userSnap.data()?['displayName']
-                                                    as String?)
-                                                ?.trim() ??
-                                            'user';
-                                        // Send notification to initiator
-                                        final notif = AppNotification(
-                                          id: DateTime.now()
-                                              .millisecondsSinceEpoch
-                                              .toString(),
-                                          userId: offer.fromUserId,
-                                          type:
-                                              AppNotificationType.offerRejected,
-                                          title: 'Swap Offer Rejected',
-                                          body:
-                                              'Your swap offer for ${listing.title} was rejected.',
-                                          data: {
-                                            'listingId': listing.id,
-                                            'offerId': offer.offerId,
-                                          },
-                                          read: false,
-                                          createdAt: DateTime.now(),
-                                        );
-                                        await Provider.of<
-                                              NotificationsProvider
-                                            >(context, listen: false)
-                                            .createNotification(notif);
-                                        setState(() {
-                                          provider.listingOffers[provider
-                                              .listingOffers
-                                              .indexWhere(
-                                                (o) =>
-                                                    o.offerId == offer.offerId,
-                                              )] = offer.copyWith(
-                                            state: SwapOfferState.cancelled,
-                                          );
-                                        });
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Offer successfully rejected. $displayName has been notified.',
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      child: const Text('Cancel'),
+                                      onPressed:
+                                          (loading[offer.offerId] == true)
+                                          ? null
+                                          : () async {
+                                              setState(
+                                                () => loading[offer.offerId] =
+                                                    true,
+                                              );
+                                              await FirebaseFirestore.instance
+                                                  .collection('swap_offers')
+                                                  .doc(offer.offerId)
+                                                  .update({
+                                                    'state': 'cancelled',
+                                                  });
+                                              final userSnap =
+                                                  await FirebaseFirestore
+                                                      .instance
+                                                      .collection('users')
+                                                      .doc(offer.fromUserId)
+                                                      .get();
+                                              final displayName =
+                                                  (userSnap.data()?['displayName']
+                                                          as String?)
+                                                      ?.trim() ??
+                                                  'user';
+                                              // Send notification to initiator
+                                              final notif = AppNotification(
+                                                id: DateTime.now()
+                                                    .millisecondsSinceEpoch
+                                                    .toString(),
+                                                userId: offer.fromUserId,
+                                                type: AppNotificationType
+                                                    .offerRejected,
+                                                title: 'Swap Offer Rejected',
+                                                body:
+                                                    'Your swap offer for ${listing.title} was rejected.',
+                                                data: {
+                                                  'listingId': listing.id,
+                                                  'offerId': offer.offerId,
+                                                },
+                                                read: false,
+                                                createdAt: DateTime.now(),
+                                              );
+                                              await Provider.of<
+                                                    NotificationsProvider
+                                                  >(context, listen: false)
+                                                  .createNotification(notif);
+                                              setState(() {
+                                                provider.listingOffers[provider
+                                                    .listingOffers
+                                                    .indexWhere(
+                                                      (o) =>
+                                                          o.offerId ==
+                                                          offer.offerId,
+                                                    )] = offer.copyWith(
+                                                  state:
+                                                      SwapOfferState.cancelled,
+                                                );
+                                              });
+                                              setState(
+                                                () => loading[offer.offerId] =
+                                                    false,
+                                              );
+                                              Navigator.of(context).pop();
+                                              ScaffoldMessenger.of(
+                                                rootContext,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Offer successfully rejected. $displayName has been notified.',
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                      child: loading[offer.offerId] == true
+                                          ? const SizedBox(
+                                              width: 22,
+                                              height: 22,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.pink,
+                                                strokeWidth: 2.2,
+                                              ),
+                                            )
+                                          : const Text('Cancel'),
                                     ),
                                   ],
                                 )
@@ -435,6 +498,7 @@ class ListingDetailsScreen extends StatelessWidget {
                       ),
                       onPressed: () {
                         _showSwapOffersModal(
+                          context,
                           context,
                           swapOffersProvider,
                           listing.id,
