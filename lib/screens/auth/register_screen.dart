@@ -121,6 +121,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           await authProvider.register(
                             email: _emailController.text.trim(),
                             password: _passwordController.text.trim(),
+                            displayName: _displayNameController.text.trim(),
                           );
                           if (authProvider.status == AuthStatus.success) {
                             if (mounted) {

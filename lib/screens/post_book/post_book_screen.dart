@@ -270,7 +270,6 @@ class _PostBookScreenState extends State<PostBookScreen> {
                               setState(() => _posting = false);
                               return;
                             }
-                            final userId = '';
                             await listingsProvider.postListing(
                               title: _titleController.text.trim(),
                               author: _authorController.text.trim(),
@@ -278,7 +277,6 @@ class _PostBookScreenState extends State<PostBookScreen> {
                               condition: _selectedCondition!,
                               coverUrl: coverUrl,
                               description: _descriptionController.text.trim(),
-                              ownerId: userId,
                             );
                             if (mounted) {
                               context.go('/home');

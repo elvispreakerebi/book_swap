@@ -5,6 +5,7 @@ import '../screens/home/home_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import '../screens/post_book/post_book_screen.dart';
+import '../screens/home/listing_details_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -22,6 +23,13 @@ class AppRouter {
         },
       ),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+      GoRoute(
+        path: '/listing/:id',
+        builder: (context, state) {
+          final listingId = state.pathParameters['id']!;
+          return ListingDetailsScreen(listingId: listingId);
+        },
+      ),
       GoRoute(
         path: '/my_listings',
         builder: (context, state) => Scaffold(

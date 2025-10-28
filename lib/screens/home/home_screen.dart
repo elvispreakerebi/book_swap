@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final listings = listingsProvider.listings;
     final isEmpty = listingsProvider.isEmpty;
     return Scaffold(
-      appBar: AppBar(title: const Text('Browse Listings'), centerTitle: false),
+      appBar: AppBar(title: const Text('Listings'), centerTitle: false),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.pink,
         onPressed: () => context.go('/post_book'),

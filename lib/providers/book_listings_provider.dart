@@ -3,6 +3,7 @@ import '../models/book_listing.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class BookListingsProvider with ChangeNotifier {
   final List<BookListing> _listings = [];
@@ -45,8 +46,9 @@ class BookListingsProvider with ChangeNotifier {
     required BookCondition condition,
     required String coverUrl,
     String description = '',
-    required String ownerId,
   }) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final ownerId = currentUser?.uid ?? '';
     final doc = _firestore.collection('listings').doc();
     final listing = BookListing(
       id: doc.id,

@@ -57,12 +57,17 @@ class AuthProvider with ChangeNotifier {
   Future<void> register({
     required String email,
     required String password,
+    String displayName = '',
   }) async {
     _status = AuthStatus.loading;
     _errorMessage = null;
     notifyListeners();
     try {
-      final result = await _authService.signUp(email, password);
+      final result = await _authService.signUp(
+        email,
+        password,
+        displayName: displayName,
+      );
       if (result != null) {
         await _authService.sendEmailVerification();
         _status = AuthStatus.success;
