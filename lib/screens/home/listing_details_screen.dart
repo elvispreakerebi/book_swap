@@ -91,11 +91,13 @@ class ListingDetailsScreen extends StatelessWidget {
                                     .get(),
                                 builder: (context, snap) {
                                   final data = snap.data?.data();
-                                  final display = data != null
-                                      ? (data['displayName'] ??
-                                            data['email'] ??
-                                            offer.fromUserId.substring(0, 8))
-                                      : offer.fromUserId.substring(0, 8);
+                                  final display =
+                                      data != null &&
+                                          (data['displayName'] as String?)
+                                                  ?.isNotEmpty ==
+                                              true
+                                      ? data['displayName']
+                                      : 'Unknown User';
                                   return Text(
                                     'From: $display',
                                     style: const TextStyle(

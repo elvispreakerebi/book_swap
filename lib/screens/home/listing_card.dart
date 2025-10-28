@@ -137,18 +137,16 @@ class BookListingCard extends StatelessWidget {
                           return FutureBuilder<
                             DocumentSnapshot<Map<String, dynamic>>
                           >(
-                            future: listing.ownerId.isEmpty
-                                ? null
-                                : FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(listing.ownerId)
-                                      .get(),
+                            future: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(listing.ownerId)
+                                .get(),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData ||
                                   snapshot.data?.data() == null) {
-                                return Text(
-                                  'Owner: ${listing.ownerId.substring(0, 8)}...',
-                                  style: const TextStyle(
+                                return const Text(
+                                  'Owner: Unknown User',
+                                  style: TextStyle(
                                     color: Colors.black87,
                                     fontWeight: FontWeight.w500,
                                     fontSize: 13.7,
@@ -156,12 +154,10 @@ class BookListingCard extends StatelessWidget {
                                 );
                               }
                               final data = snapshot.data!.data()!;
-                              final display =
-                                  data['displayName'] ??
-                                  data['email'] ??
-                                  listing.ownerId.substring(0, 8);
+                              final displayName =
+                                  (data['displayName'] as String?)?.trim();
                               return Text(
-                                'Owner: $display',
+                                'Owner: ${displayName != null && displayName.isNotEmpty ? displayName : 'Unknown User'}',
                                 style: const TextStyle(
                                   color: Colors.black87,
                                   fontWeight: FontWeight.w500,

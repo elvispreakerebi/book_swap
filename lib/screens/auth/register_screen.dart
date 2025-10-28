@@ -58,11 +58,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: _displayNameController,
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
-                  labelText: 'Display Name (optional)',
+                  labelText: 'Display Name',
                   border: border,
                   enabledBorder: border,
                   focusedBorder: border,
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty)
+                    return 'Display name is required';
+                  return null;
+                },
               ),
               const SizedBox(height: 14),
               TextFormField(
