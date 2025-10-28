@@ -68,7 +68,7 @@ class ListingDetailsScreen extends StatelessWidget {
                   icon: const Icon(Icons.edit),
                   tooltip: 'Edit',
                   onPressed: () {
-                    // TODO: Implement edit functionality
+                    context.push('/edit_book/${listing.id}', extra: listing);
                   },
                 ),
                 const SizedBox(width: 8),
@@ -177,91 +177,113 @@ class ListingDetailsScreen extends StatelessWidget {
               ]
             : null,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          AspectRatio(
-            aspectRatio: 1 / 1.45,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                listing.coverUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(
-                  color: Colors.grey[200],
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.broken_image,
-                    size: 60,
-                    color: Colors.grey,
+      body: Builder(
+        builder: (context) {
+          final extra = GoRouterState.of(context).extra;
+          if (extra is Map && extra['edited'] == true) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Changes saved.'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            });
+          }
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              AspectRatio(
+                aspectRatio: 1 / 1.45,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    listing.coverUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (c, e, s) => Container(
+                      color: Colors.grey[200],
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.broken_image,
+                        size: 60,
+                        color: Colors.grey,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            listing.title,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+              const SizedBox(height: 18),
               Text(
-                'by ${listing.author}',
-                style: const TextStyle(fontSize: 15, color: Colors.black87),
-              ),
-              Text(
-                _bookConditionText(listing.condition),
+                listing.title,
                 style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.pink,
-                  fontSize: 15.7,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Swap For: ${listing.swapFor}',
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 10),
-          Divider(color: Colors.grey[300]),
-          const SizedBox(height: 8),
-          Text(
-            listing.description.isEmpty
-                ? 'No description provided.'
-                : listing.description,
-            style: const TextStyle(fontSize: 15.5, color: Colors.black87),
-          ),
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              const Icon(Icons.person, size: 19, color: Colors.black45),
-              const SizedBox(width: 5),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'by ${listing.author}',
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  ),
+                  Text(
+                    _bookConditionText(listing.condition),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.pink,
+                      fontSize: 15.7,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               Text(
-                isOwner ? 'You own this' : 'Owner: ${listing.ownerId}',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: isOwner ? Colors.pink : Colors.black87,
-                ),
+                'Swap For: ${listing.swapFor}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 10),
+              Divider(color: Colors.grey[300]),
+              const SizedBox(height: 8),
+              Text(
+                listing.description.isEmpty
+                    ? 'No description provided.'
+                    : listing.description,
+                style: const TextStyle(fontSize: 15.5, color: Colors.black87),
+              ),
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  const Icon(Icons.person, size: 19, color: Colors.black45),
+                  const SizedBox(width: 5),
+                  Text(
+                    isOwner ? 'You own this' : 'Owner: ${listing.ownerId}',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: isOwner ? Colors.pink : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 17,
+                    color: Colors.black38,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    listing.createdAt.toString(),
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                ],
               ),
             ],
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today, size: 17, color: Colors.black38),
-              const SizedBox(width: 6),
-              Text(
-                listing.createdAt.toString(),
-                style: const TextStyle(fontSize: 14, color: Colors.black54),
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

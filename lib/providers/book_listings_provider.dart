@@ -65,6 +65,38 @@ class BookListingsProvider with ChangeNotifier {
     await doc.set(listing.toJson());
   }
 
+  Future<void> updateListing({
+    required String id,
+    required String title,
+    required String author,
+    required String swapFor,
+    required BookCondition condition,
+    required String coverUrl,
+    required String description,
+  }) async {
+    final doc = _firestore.collection('listings').doc(id);
+    await doc.update({
+      'title': title,
+      'author': author,
+      'swapFor': swapFor,
+      'condition': condition.name,
+      'coverUrl': coverUrl,
+      'description': description,
+    });
+    final idx = _listings.indexWhere((l) => l.id == id);
+    if (idx != -1) {
+      _listings[idx] = _listings[idx].copyWith(
+        title: title,
+        author: author,
+        swapFor: swapFor,
+        condition: condition,
+        coverUrl: coverUrl,
+        description: description,
+      );
+      notifyListeners();
+    }
+  }
+
   Future<void> deleteListing(String id) async {
     await _firestore.collection('listings').doc(id).delete();
     _listings.removeWhere((l) => l.id == id);

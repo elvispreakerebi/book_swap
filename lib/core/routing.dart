@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import '../screens/post_book/post_book_screen.dart';
 import '../screens/home/listing_details_screen.dart';
+import '../screens/post_book/edit_book_screen.dart';
+import '../models/book_listing.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -54,6 +56,16 @@ class AppRouter {
       GoRoute(
         path: '/post_book',
         builder: (context, state) => const PostBookScreen(),
+      ),
+      GoRoute(
+        path: '/edit_book/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          final listing = state.extra is BookListing
+              ? state.extra as BookListing
+              : null;
+          return EditBookScreen(listingId: id, listing: listing);
+        },
       ),
     ],
   );
