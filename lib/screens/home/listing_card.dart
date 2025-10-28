@@ -10,84 +10,90 @@ class BookListingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateText = DateFormat.yMMMd().format(listing.createdAt);
     String condText = listing.condition.name.replaceAll('LikeNew', 'Like New');
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {}, // TODO: navigate to details
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  listing.coverUrl,
-                  fit: BoxFit.cover,
-                  height: 80,
-                  width: 55,
+
+    return Container(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8, right: 15),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  color: Colors.grey[200],
+                  width: 60,
+                  height: 85,
+                  child: Image.network(
+                    listing.coverUrl,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                  ),
                 ),
               ),
-              const SizedBox(width: 14),
-              Expanded(
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 2),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       listing.title,
                       style: const TextStyle(
-                        fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        fontSize: 19,
+                        color: Colors.black,
+                        height: 1.09,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Text(
                       listing.author,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 15.2,
                         color: Colors.black87,
+                        fontWeight: FontWeight.normal,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: condText,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.pink,
-                              fontSize: 13,
-                            ),
-                          ),
-                          TextSpan(
-                            text: "   ",
-                            style: const TextStyle(color: Colors.black54),
-                          ),
-                          WidgetSpan(
-                            child: Icon(
-                              Icons.calendar_today,
-                              size: 13,
-                              color: Colors.black45,
-                            ),
-                          ),
-                          TextSpan(
-                            text: ' $dateText',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 7),
+                    Text(
+                      condText,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15.3,
+                        color: Colors.black,
+                        letterSpacing: 0.2,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_today,
+                          size: 15,
+                          color: Colors.black45,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          dateText,
+                          style: const TextStyle(
+                            fontSize: 14.2,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

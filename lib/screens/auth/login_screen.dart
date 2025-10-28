@@ -119,7 +119,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               email: _emailController.text.trim(),
                               password: _passwordController.text.trim(),
                             );
-                            if (!success && authProvider.errorMessage != null) {
+                            if (success) {
+                              if (mounted) context.go('/home');
+                            } else if (authProvider.errorMessage != null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(authProvider.errorMessage!),
@@ -134,6 +136,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
+              // Inline visible error for debug, so nothing is hidden
+              if (authProvider.status == AuthStatus.error &&
+                  authProvider.errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    authProvider.errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

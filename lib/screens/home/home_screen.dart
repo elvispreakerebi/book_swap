@@ -56,11 +56,16 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(title: const Text('Browse Listings'), centerTitle: false),
       body: isEmpty
           ? _buildEmptyState()
-          : ListView.builder(
+          : ListView.separated(
               padding: const EdgeInsets.all(12),
               itemCount: listings.length,
               itemBuilder: (context, idx) =>
                   BookListingCard(listing: listings[idx]),
+              separatorBuilder: (context, idx) => const Divider(
+                height: 1,
+                color: Color(0xFFEAEAEA),
+                thickness: 1.2,
+              ),
             ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
