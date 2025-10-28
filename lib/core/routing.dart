@@ -1,6 +1,7 @@
 import '../screens/auth/welcome_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/login_screen.dart';
+import '../screens/home/home_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
@@ -18,6 +19,7 @@ class AppRouter {
           return LoginScreen(showAccountCreatedSnackbar: showSnackbar);
         },
       ),
+      GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
     ],
   );
 }
