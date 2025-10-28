@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'listing_card.dart';
 import 'package:provider/provider.dart';
 import '../../providers/book_listings_provider.dart';
+import '../../providers/notifications_provider.dart';
+import '../../models/notification_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -65,6 +67,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final listings = listingsProvider.listings;
     final isEmpty = listingsProvider.isEmpty;
     // Show deletion success snackbar if routed from details page with extra data
+    final notificationsProvider = Provider.of<NotificationsProvider>(
+      context,
+      listen: true,
+    );
     final extra = GoRouterState.of(context).extra;
     if (extra is Map && extra['deleted'] == true) {
       final title = extra['title'] ?? 'Listing';
@@ -78,7 +84,128 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('Listings'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('Listings'),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications_none),
+                if (notificationsProvider.unreadCount > 0)
+                  Positioned(
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.pink,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      child: Text(
+                        '${notificationsProvider.unreadCount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onPressed: () {
+              // Show actual notifications
+              showDialog(
+                context: context,
+                builder: (context) {
+                  final notifications = notificationsProvider.notifications;
+                  return AlertDialog(
+                    title: const Text('Notifications'),
+                    content: SizedBox(
+                      width: double.maxFinite,
+                      child: notifications.isEmpty
+                          ? const Text('No notifications yet.')
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: notifications.length,
+                              separatorBuilder: (c, i) => const Divider(),
+                              itemBuilder: (c, i) {
+                                final notif = notifications[i];
+                                return ListTile(
+                                  leading: notif.read
+                                      ? null
+                                      : const Icon(
+                                          Icons.brightness_1,
+                                          size: 12,
+                                          color: Colors.pink,
+                                        ),
+                                  title: Text(notif.title),
+                                  subtitle: Text(notif.body),
+                                  trailing:
+                                      notif.type == AppNotificationType.chatMsg
+                                      ? const Icon(Icons.chat)
+                                      : notif.type ==
+                                            AppNotificationType.offerMade
+                                      ? const Icon(Icons.swap_horiz)
+                                      : notif.type ==
+                                            AppNotificationType.offerAccepted
+                                      ? const Icon(
+                                          Icons.check_circle,
+                                          color: Colors.green,
+                                        )
+                                      : notif.type ==
+                                            AppNotificationType.offerRejected
+                                      ? const Icon(
+                                          Icons.cancel,
+                                          color: Colors.red,
+                                        )
+                                      : null,
+                                  onTap: () async {
+                                    await notificationsProvider.markAsRead(
+                                      notif.id,
+                                    );
+                                    Navigator.of(context).pop(); // close dialog
+                                    // Go to corresponding details
+                                    if (notif.data != null &&
+                                        notif.data!['listingId'] != null) {
+                                      final listingId =
+                                          notif.data!['listingId'];
+                                      if (listingId is String &&
+                                          listingId.isNotEmpty) {
+                                        if (context.mounted)
+                                          context.go('/listing/$listingId');
+                                      }
+                                    }
+                                    // Add: if notif.type == chatMsg, go to chat with notif.data!['chatId']
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.pink,
         onPressed: () => context.go('/post_book'),

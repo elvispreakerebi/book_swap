@@ -5,6 +5,7 @@ import 'core/routing.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/book_listings_provider.dart';
+import 'providers/notifications_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
@@ -16,6 +17,9 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => BookListingsProvider()),
+        ChangeNotifierProvider(
+          create: (_) => NotificationsProvider()..startListening(),
+        ),
       ],
       child: const MyApp(),
     ),

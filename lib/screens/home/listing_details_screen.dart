@@ -7,6 +7,9 @@ import '../../models/book_listing.dart';
 import '../../models/swap_offer.dart';
 import '../../providers/swap_offers_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../providers/notifications_provider.dart';
+import '../../models/notification_model.dart';
+import '../../services/cloudinary_service.dart';
 
 class ListingDetailsScreen extends StatelessWidget {
   final String listingId;
@@ -260,6 +263,10 @@ class ListingDetailsScreen extends StatelessWidget {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.pink,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () {
                           _showSwapOffersModal(
@@ -268,7 +275,10 @@ class ListingDetailsScreen extends StatelessWidget {
                             listing.id,
                           );
                         },
-                        child: const Text('See Swap Offers'),
+                        child: const Text(
+                          'See Swap Offers',
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
                       ),
                     )
                   : SizedBox.shrink()),
@@ -290,6 +300,10 @@ class ListingDetailsScreen extends StatelessWidget {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.pink,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: hasPending
                         ? null
@@ -299,6 +313,26 @@ class ListingDetailsScreen extends StatelessWidget {
                               toUserId: listing.ownerId,
                             );
                             if (ok) {
+                              // Create notification for owner
+                              final notif = AppNotification(
+                                id: DateTime.now().millisecondsSinceEpoch
+                                    .toString(),
+                                userId: listing.ownerId,
+                                type: AppNotificationType.offerMade,
+                                title: 'New Swap Offer',
+                                body:
+                                    'You received a swap offer for ${listing.title}.',
+                                data: {
+                                  'listingId': listing.id,
+                                  'fromUser': user?.uid ?? '',
+                                },
+                                read: false,
+                                createdAt: DateTime.now(),
+                              );
+                              await Provider.of<NotificationsProvider>(
+                                context,
+                                listen: false,
+                              ).createNotification(notif);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Swap offer sent!'),
@@ -309,11 +343,11 @@ class ListingDetailsScreen extends StatelessWidget {
                     child: hasPending
                         ? const Text(
                             'Pending',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(fontSize: 18, color: Colors.white),
                           )
                         : const Text(
                             'Swap',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(fontSize: 18, color: Colors.white),
                           ),
                   ),
                 );
@@ -384,6 +418,18 @@ class ListingDetailsScreen extends StatelessWidget {
                                         children: [
                                           Expanded(
                                             child: OutlinedButton(
+                                              style: OutlinedButton.styleFrom(
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: 16,
+                                                ),
+                                                side: BorderSide(
+                                                  color: Colors.pink,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
                                               onPressed: () =>
                                                   Navigator.of(context).pop(),
                                               child: const Text('Cancel'),
@@ -394,6 +440,16 @@ class ListingDetailsScreen extends StatelessWidget {
                                             child: ElevatedButton(
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: Colors.pink,
+                                                minimumSize: Size.fromHeight(
+                                                  48,
+                                                ),
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: 16,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
                                               ),
                                               onPressed: isLoading
                                                   ? null
@@ -401,6 +457,13 @@ class ListingDetailsScreen extends StatelessWidget {
                                                       setState(
                                                         () => isLoading = true,
                                                       );
+                                                      // Delete from Cloudinary first, then Firestore
+                                                      try {
+                                                        await CloudinaryService()
+                                                            .deleteImage(
+                                                              listing.coverUrl,
+                                                            );
+                                                      } catch (_) {}
                                                       await Provider.of<
                                                             BookListingsProvider
                                                           >(
