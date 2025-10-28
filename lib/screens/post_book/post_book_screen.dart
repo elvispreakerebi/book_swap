@@ -5,6 +5,7 @@ import '../../models/book_listing.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
+import '../../services/cloudinary_service.dart';
 
 class PostBookScreen extends StatefulWidget {
   const PostBookScreen({super.key});
@@ -21,6 +22,7 @@ class _PostBookScreenState extends State<PostBookScreen> {
   BookCondition? _selectedCondition;
   File? _coverFile;
   bool _posting = false;
+  final CloudinaryService _cloudinary = CloudinaryService();
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -203,11 +205,16 @@ class _PostBookScreenState extends State<PostBookScreen> {
                           }
                           setState(() => _posting = true);
                           try {
-                            final userId =
-                                ''; // Use actual signed-in user id in real code
-                            final coverUrl = await listingsProvider.uploadCover(
+                            // Upload cover to Cloudinary
+                            final coverUrl = await _cloudinary.uploadImage(
                               _coverFile!,
                             );
+                            if (coverUrl == null) {
+                              throw Exception(
+                                'Failed to upload image to Cloudinary',
+                              );
+                            }
+                            final userId = '';
                             await listingsProvider.postListing(
                               title: _titleController.text.trim(),
                               author: _authorController.text.trim(),

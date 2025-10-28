@@ -5,9 +5,11 @@ import 'core/routing.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/book_listings_provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     MultiProvider(
