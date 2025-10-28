@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,11 +15,7 @@ class WelcomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(
-                Icons.menu_book,
-                size: 80,
-                color: Colors.pink,
-              ),
+              const Icon(Icons.menu_book, size: 80, color: Colors.pink),
               const SizedBox(height: 24),
               const Text(
                 'BookSwap',
@@ -33,12 +28,9 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Swap Your Books\\nWith Other Students',
+                'Swap Your Books With Other Students',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.black54,
-                ),
+                style: TextStyle(fontSize: 20, color: Colors.black54),
               ),
               const SizedBox(height: 48),
               ElevatedButton(
