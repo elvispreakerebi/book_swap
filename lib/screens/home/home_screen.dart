@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../providers/book_listings_provider.dart';
 import '../../providers/notifications_provider.dart';
 import '../../models/notification_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -119,86 +120,171 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             onPressed: () {
-              // Show actual notifications
-              showDialog(
+              // Show notifications in a modal bottom sheet
+              showModalBottomSheet(
                 context: context,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                ),
                 builder: (context) {
                   final notifications = notificationsProvider.notifications;
-                  return AlertDialog(
-                    title: const Text('Notifications'),
-                    content: SizedBox(
-                      width: double.maxFinite,
-                      child: notifications.isEmpty
-                          ? const Text('No notifications yet.')
-                          : ListView.separated(
-                              shrinkWrap: true,
-                              itemCount: notifications.length,
-                              separatorBuilder: (c, i) => const Divider(),
-                              itemBuilder: (c, i) {
-                                final notif = notifications[i];
-                                return ListTile(
-                                  leading: notif.read
-                                      ? null
-                                      : const Icon(
-                                          Icons.brightness_1,
-                                          size: 12,
-                                          color: Colors.pink,
-                                        ),
-                                  title: Text(notif.title),
-                                  subtitle: Text(notif.body),
-                                  trailing:
-                                      notif.type == AppNotificationType.chatMsg
-                                      ? const Icon(Icons.chat)
-                                      : notif.type ==
-                                            AppNotificationType.offerMade
-                                      ? const Icon(Icons.swap_horiz)
-                                      : notif.type ==
-                                            AppNotificationType.offerAccepted
-                                      ? const Icon(
-                                          Icons.check_circle,
-                                          color: Colors.green,
-                                        )
-                                      : notif.type ==
-                                            AppNotificationType.offerRejected
-                                      ? const Icon(
-                                          Icons.cancel,
-                                          color: Colors.red,
-                                        )
-                                      : null,
-                                  onTap: () async {
-                                    await notificationsProvider.markAsRead(
-                                      notif.id,
-                                    );
-                                    Navigator.of(context).pop(); // close dialog
-                                    // Go to corresponding details
-                                    if (notif.data != null &&
-                                        notif.data!['listingId'] != null) {
-                                      final listingId =
-                                          notif.data!['listingId'];
-                                      if (listingId is String &&
-                                          listingId.isNotEmpty) {
-                                        if (context.mounted)
-                                          context.go('/listing/$listingId');
-                                      }
-                                    }
-                                    // Add: if notif.type == chatMsg, go to chat with notif.data!['chatId']
-                                  },
-                                );
-                              },
-                            ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Close'),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  return SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Notifications',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 0,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    onPressed: notifications.isEmpty
+                                        ? null
+                                        : () async {
+                                            for (final n in notifications) {
+                                              if (!n.read)
+                                                await notificationsProvider
+                                                    .markAsRead(n.id);
+                                            }
+                                          },
+                                    child: const Text('Mark all as read'),
+                                  ),
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    onPressed: notifications.isEmpty
+                                        ? null
+                                        : () async {
+                                            final user = FirebaseAuth
+                                                .instance
+                                                .currentUser;
+                                            if (user == null) return;
+                                            final batch = FirebaseFirestore
+                                                .instance
+                                                .batch();
+                                            final snap = await FirebaseFirestore
+                                                .instance
+                                                .collection('notifications')
+                                                .where(
+                                                  'userId',
+                                                  isEqualTo: user.uid,
+                                                )
+                                                .get();
+                                            for (final doc in snap.docs) {
+                                              batch.delete(doc.reference);
+                                            }
+                                            await batch.commit();
+                                            await notificationsProvider
+                                                .fetchNotifications();
+                                          },
+                                    child: const Text(
+                                      'Clear all',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        ),
+                          const SizedBox(height: 5),
+                          notifications.isEmpty
+                              ? const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 40),
+                                  child: Text(
+                                    'No notifications yet.',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                )
+                              : Flexible(
+                                  child: ListView.separated(
+                                    shrinkWrap: true,
+                                    itemCount: notifications.length,
+                                    separatorBuilder: (c, i) => const Divider(),
+                                    itemBuilder: (c, i) {
+                                      final notif = notifications[i];
+                                      return ListTile(
+                                        leading: notif.read
+                                            ? null
+                                            : const Icon(
+                                                Icons.brightness_1,
+                                                size: 12,
+                                                color: Colors.pink,
+                                              ),
+                                        title: Text(notif.title),
+                                        subtitle: Text(notif.body),
+                                        trailing:
+                                            notif.type ==
+                                                AppNotificationType.chatMsg
+                                            ? const Icon(Icons.chat)
+                                            : notif.type ==
+                                                  AppNotificationType.offerMade
+                                            ? const Icon(Icons.swap_horiz)
+                                            : notif.type ==
+                                                  AppNotificationType
+                                                      .offerAccepted
+                                            ? const Icon(
+                                                Icons.check_circle,
+                                                color: Colors.green,
+                                              )
+                                            : notif.type ==
+                                                  AppNotificationType
+                                                      .offerRejected
+                                            ? const Icon(
+                                                Icons.cancel,
+                                                color: Colors.red,
+                                              )
+                                            : null,
+                                        onTap: () async {
+                                          await notificationsProvider
+                                              .markAsRead(notif.id);
+                                          Navigator.pop(context); // close modal
+                                          // Navigate as before
+                                          if (notif.data != null &&
+                                              notif.data!['listingId'] !=
+                                                  null) {
+                                            final listingId =
+                                                notif.data!['listingId'];
+                                            if (listingId is String &&
+                                                listingId.isNotEmpty) {
+                                              if (context.mounted)
+                                                context.go(
+                                                  '/listing/$listingId',
+                                                );
+                                            }
+                                          }
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                        ],
                       ),
-                    ],
+                    ),
                   );
                 },
               );
