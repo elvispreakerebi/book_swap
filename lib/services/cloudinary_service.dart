@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -23,6 +24,36 @@ class CloudinaryService {
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['secure_url'] as String?;
+    }
+    return null;
+  }
+
+  // Upload image bytes
+  Future<String?> uploadImageBytes(
+    Uint8List bytes, {
+    String? name,
+    String? folder,
+  }) async {
+    final url = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+    final request = http.MultipartRequest('POST', Uri.parse(url))
+      ..fields['upload_preset'] = dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? '';
+    if (folder != null) {
+      request.fields['folder'] = folder;
+    }
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: name ?? 'upload.jpg',
+      ),
+    );
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+      return data['secure_url'] as String?;
+    } else {
+      print('Cloudinary error: ${response.body}');
     }
     return null;
   }

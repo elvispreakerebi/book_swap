@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import '../../services/cloudinary_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class PostBookScreen extends StatefulWidget {
   const PostBookScreen({super.key});
@@ -23,14 +24,42 @@ class _PostBookScreenState extends State<PostBookScreen> {
   File? _coverFile;
   bool _posting = false;
   final CloudinaryService _cloudinary = CloudinaryService();
+  XFile? _pickedXFile;
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() {
-        _coverFile = File(picked.path);
-      });
+    // Request permission before picking image
+    PermissionStatus status;
+    if (Theme.of(context).platform == TargetPlatform.android) {
+      if (await Permission.photos.isGranted ||
+          await Permission.storage.isGranted) {
+        status = PermissionStatus.granted;
+      } else {
+        // On API 33+ use photos, else use storage
+        status = await Permission.photos.request();
+        if (!status.isGranted) {
+          status = await Permission.storage.request();
+        }
+      }
+    } else {
+      status = await Permission.photos.request();
+    }
+    if (status.isGranted) {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        setState(() {
+          _pickedXFile = picked;
+          _coverFile = File(picked.path);
+        });
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Permission denied to access gallery. Please enable permission to pick images.',
+          ),
+        ),
+      );
     }
   }
 
@@ -191,8 +220,8 @@ class _PostBookScreenState extends State<PostBookScreen> {
                       ? null
                       : () async {
                           if (!_formKey.currentState!.validate() ||
-                              _coverFile == null) {
-                            if (_coverFile == null) {
+                              _pickedXFile == null) {
+                            if (_pickedXFile == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -203,16 +232,43 @@ class _PostBookScreenState extends State<PostBookScreen> {
                             }
                             return;
                           }
+                          // CHECK FILE EXISTENCE
+                          bool exists = false;
+                          try {
+                            exists = await File(_pickedXFile!.path).exists();
+                          } catch (e) {
+                            exists = false;
+                          }
+                          if (!exists) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Selected image could not be found. Please pick an image again.',
+                                ),
+                              ),
+                            );
+                            setState(() => _posting = false);
+                            return;
+                          }
                           setState(() => _posting = true);
                           try {
-                            // Upload cover to Cloudinary
-                            final coverUrl = await _cloudinary.uploadImage(
-                              _coverFile!,
+                            // Use bytes for Cloudinary upload to support new Android OS
+                            final imageBytes = await _pickedXFile!
+                                .readAsBytes();
+                            final coverUrl = await _cloudinary.uploadImageBytes(
+                              imageBytes,
+                              name: _pickedXFile!.name,
                             );
                             if (coverUrl == null) {
-                              throw Exception(
-                                'Failed to upload image to Cloudinary',
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Failed to upload image to Cloudinary.',
+                                  ),
+                                ),
                               );
+                              setState(() => _posting = false);
+                              return;
                             }
                             final userId = '';
                             await listingsProvider.postListing(
@@ -227,7 +283,9 @@ class _PostBookScreenState extends State<PostBookScreen> {
                             if (mounted) {
                               context.go('/home');
                             }
-                          } catch (e) {
+                          } catch (e, s) {
+                            debugPrint('Cloudinary upload exception: $e');
+                            debugPrint('Stack: $s');
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Failed to post: $e')),
                             );
