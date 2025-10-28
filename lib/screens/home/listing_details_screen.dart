@@ -635,13 +635,42 @@ class ListingDetailsScreen extends StatelessWidget {
                   children: [
                     const Icon(Icons.person, size: 19, color: Colors.black45),
                     const SizedBox(width: 5),
-                    Text(
-                      isOwner ? 'You own this' : 'Owner: Unknown User',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isOwner ? Colors.pink : Colors.black87,
+                    if (isOwner)
+                      const Text(
+                        'You own this',
+                        style: TextStyle(fontSize: 15, color: Colors.pink),
+                      )
+                    else
+                      FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(listing.ownerId)
+                            .get(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData ||
+                              snapshot.data?.data() == null) {
+                            return const Text(
+                              'Owner: Unknown User',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 15,
+                              ),
+                            );
+                          }
+                          final data = snapshot.data!.data()!;
+                          final displayName = (data['displayName'] as String?)
+                              ?.trim();
+                          return Text(
+                            'Owner: ${displayName != null && displayName.isNotEmpty ? displayName : 'Unknown User'}',
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 15,
+                            ),
+                          );
+                        },
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 18),
