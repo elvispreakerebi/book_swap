@@ -456,19 +456,65 @@ class ListingDetailsScreen extends StatelessWidget {
             bottomBar = FutureBuilder(
               future: swapOffersProvider.fetchMySentOffers(),
               builder: (context, snapshot) {
-                final hasPending = swapOffersProvider.mySentOffers.any(
-                  (o) =>
-                      o.listingId == listing.id &&
-                      o.state == SwapOfferState.pending,
-                );
+                final myOffers = swapOffersProvider.mySentOffers
+                    .where((o) => o.listingId == listing.id)
+                    .toList();
+                SwapOfferState? userState = myOffers.isNotEmpty
+                    ? myOffers.first.state
+                    : null;
+                if (userState == SwapOfferState.accepted) {
+                  // Green: offer accepted for this user
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: null,
+                      child: const Text(
+                        'Offer accepted',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                  );
+                }
+                if (userState == SwapOfferState.cancelled) {
+                  // Grey, rejected
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: null,
+                      child: const Text(
+                        'Offer rejected',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                  );
+                }
+                final hasPending = userState == SwapOfferState.pending;
                 return Container(
                   width: double.infinity,
-                  color: Colors.white,
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.pink,
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -481,7 +527,6 @@ class ListingDetailsScreen extends StatelessWidget {
                               toUserId: listing.ownerId,
                             );
                             if (ok) {
-                              // Create notification for owner
                               final notif = AppNotification(
                                 id: DateTime.now().millisecondsSinceEpoch
                                     .toString(),
