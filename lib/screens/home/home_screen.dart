@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/book_listing.dart';
 import 'listing_card.dart';
+import 'package:provider/provider.dart';
+import '../../providers/book_listings_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,32 +14,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
-  // Placeholder listings
-  List<BookListing> listings = [
-    BookListing(
-      id: '1',
-      ownerId: 'owner1',
-      title: 'Data Structures & Algorithms',
-      author: 'V Dermon',
-      condition: BookCondition.LikeNew,
-      coverUrl: 'https://dummyimage.com/100x150/cccccc/000000&text=Book1',
-      description: 'A classic textbook.',
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      isActive: true,
-    ),
-    BookListing(
-      id: '2',
-      ownerId: 'owner2',
-      title: 'Operating Systems',
-      author: 'John Doe',
-      condition: BookCondition.Used,
-      coverUrl: 'https://dummyimage.com/100x150/cccccc/000000&text=Book2',
-      description: 'Slightly used.',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      isActive: true,
-    ),
-  ];
 
   @override
   void didChangeDependencies() {
@@ -50,22 +26,63 @@ class _HomeScreenState extends State<HomeScreen> {
     super.didChangeDependencies();
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(Icons.menu_book, color: Colors.pink, size: 50),
+          SizedBox(height: 16),
+          Text(
+            'No books listed yet',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'New books added by users will appear here.',
+            style: TextStyle(fontSize: 14, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final listingsProvider = Provider.of<BookListingsProvider>(context);
+    final listings = listingsProvider.listings;
+    final isEmpty = listingsProvider.isEmpty;
     return Scaffold(
       appBar: AppBar(title: const Text('Browse Listings'), centerTitle: false),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12),
-        itemCount: listings.length,
-        itemBuilder: (context, idx) => BookListingCard(listing: listings[idx]),
-      ),
+      body: isEmpty
+          ? _buildEmptyState()
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: listings.length,
+              itemBuilder: (context, idx) =>
+                  BookListingCard(listing: listings[idx]),
+            ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.pink,
         unselectedItemColor: Colors.black54,
         onTap: (idx) {
           setState(() => _selectedIndex = idx);
-          // TODO: route to other screens here
+          // Handle navigation to different root screens here!
+          switch (idx) {
+            case 0:
+              context.go('/home');
+              break;
+            case 1:
+              context.go('/my_listings');
+              break;
+            case 2:
+              context.go('/chats');
+              break;
+            case 3:
+              context.go('/settings');
+              break;
+          }
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),

@@ -4,12 +4,19 @@ import 'package:provider/provider.dart';
 import 'core/routing.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'providers/book_listings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
-    ChangeNotifierProvider(create: (_) => AuthProvider(), child: const MyApp()),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => BookListingsProvider()),
+      ],
+      child: const MyApp(),
+    ),
   );
 }
 
