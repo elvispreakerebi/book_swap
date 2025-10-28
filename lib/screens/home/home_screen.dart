@@ -161,10 +161,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ? null
                                         : () async {
                                             for (final n in notifications) {
-                                              if (!n.read)
+                                              if (!n.read) {
                                                 await notificationsProvider
                                                     .markAsRead(n.id);
+                                              }
                                             }
+                                            await notificationsProvider
+                                                .fetchNotifications();
+                                            (context as Element)
+                                                .markNeedsBuild(); // force update
                                           },
                                     child: const Text('Mark all as read'),
                                   ),
@@ -262,6 +267,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         onTap: () async {
                                           await notificationsProvider
                                               .markAsRead(notif.id);
+                                          await notificationsProvider
+                                              .fetchNotifications();
+                                          (context as Element).markNeedsBuild();
                                           Navigator.pop(context); // close modal
                                           // Navigate as before
                                           if (notif.data != null &&
