@@ -63,6 +63,13 @@ class _PostBookScreenState extends State<PostBookScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        'Complete the form below to list your book. Better info and images help your book get noticed.',
+                        style: TextStyle(fontSize: 16, color: Colors.black87),
+                      ),
+                    ),
                     TextFormField(
                       controller: _titleController,
                       decoration: const InputDecoration(
