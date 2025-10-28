@@ -6,6 +6,7 @@ import '../../providers/book_listings_provider.dart';
 import '../../models/book_listing.dart';
 import '../../models/swap_offer.dart';
 import '../../providers/swap_offers_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ListingDetailsScreen extends StatelessWidget {
   final String listingId;
@@ -31,6 +32,178 @@ class ListingDetailsScreen extends StatelessWidget {
           .replaceAll('BookCondition.', '')
           .replaceAll('LikeNew', 'Like New');
     }
+  }
+
+  void _showSwapOffersModal(
+    BuildContext context,
+    SwapOffersProvider provider,
+    String listingId,
+  ) async {
+    await provider.fetchListingOffers(listingId);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final offers = provider.listingOffers;
+            return Padding(
+              padding: MediaQuery.of(
+                context,
+              ).viewInsets.add(const EdgeInsets.all(20)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Swap Offers',
+                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  if (offers.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 30),
+                      child: Text(
+                        'No swap offers yet.',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    )
+                  else
+                    ...offers.map(
+                      (offer) => Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 15,
+                            horizontal: 12,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              FutureBuilder<
+                                DocumentSnapshot<Map<String, dynamic>>
+                              >(
+                                future: FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(offer.fromUserId)
+                                    .get(),
+                                builder: (context, snap) {
+                                  final data = snap.data?.data();
+                                  final display = data != null
+                                      ? (data['displayName'] ??
+                                            data['email'] ??
+                                            offer.fromUserId.substring(0, 8))
+                                      : offer.fromUserId.substring(0, 8);
+                                  return Text(
+                                    'From: $display',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 15,
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (offer.state == SwapOfferState.pending)
+                                Row(
+                                  children: [
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                        minimumSize: const Size(0, 38),
+                                      ),
+                                      onPressed: () async {
+                                        // Accept: update state in Firestore
+                                        await FirebaseFirestore.instance
+                                            .collection('swap_offers')
+                                            .doc(offer.offerId)
+                                            .update({'state': 'accepted'});
+                                        setState(() {
+                                          provider.listingOffers[provider
+                                              .listingOffers
+                                              .indexWhere(
+                                                (o) =>
+                                                    o.offerId == offer.offerId,
+                                              )] = offer.copyWith(
+                                            state: SwapOfferState.accepted,
+                                          );
+                                        });
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Offer accepted.'),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text('Accept'),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.red,
+                                        minimumSize: const Size(0, 38),
+                                      ),
+                                      onPressed: () async {
+                                        await FirebaseFirestore.instance
+                                            .collection('swap_offers')
+                                            .doc(offer.offerId)
+                                            .update({'state': 'cancelled'});
+                                        setState(() {
+                                          provider.listingOffers[provider
+                                              .listingOffers
+                                              .indexWhere(
+                                                (o) =>
+                                                    o.offerId == offer.offerId,
+                                              )] = offer.copyWith(
+                                            state: SwapOfferState.cancelled,
+                                          );
+                                        });
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Offer cancelled.'),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                  ],
+                                )
+                              else ...[
+                                Text(
+                                  offer.state == SwapOfferState.accepted
+                                      ? 'Accepted'
+                                      : offer.state == SwapOfferState.cancelled
+                                      ? 'Cancelled'
+                                      : offer.state.name,
+                                  style: TextStyle(
+                                    color:
+                                        offer.state == SwapOfferState.accepted
+                                        ? Colors.green
+                                        : offer.state ==
+                                              SwapOfferState.cancelled
+                                        ? Colors.red
+                                        : Colors.black54,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -87,13 +260,10 @@ class ListingDetailsScreen extends StatelessWidget {
                           backgroundColor: Colors.pink,
                         ),
                         onPressed: () {
-                          // TODO: Navigate to swap offers screen for this listing
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'TODO: See Swap Offers for this book.',
-                              ),
-                            ),
+                          _showSwapOffersModal(
+                            context,
+                            swapOffersProvider,
+                            listing.id,
                           );
                         },
                         child: const Text('See Swap Offers'),
