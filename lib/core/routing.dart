@@ -1,6 +1,7 @@
-import 'package:go_router/go_router.dart';
 import '../screens/auth/welcome_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/login_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -10,7 +11,13 @@ class AppRouter {
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
       ),
-      // Add other routes here
+      GoRoute(
+        path: '/login',
+        builder: (context, state) {
+          final showSnackbar = state.extra == true;
+          return LoginScreen(showAccountCreatedSnackbar: showSnackbar);
+        },
+      ),
     ],
   );
 }

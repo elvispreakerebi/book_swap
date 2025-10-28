@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -31,7 +32,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       borderSide: const BorderSide(color: Colors.pink),
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Account')),
+      appBar: AppBar(
+        title: const Text('Create Account'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -115,6 +122,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             email: _emailController.text.trim(),
                             password: _passwordController.text.trim(),
                           );
+                          if (authProvider.status == AuthStatus.success) {
+                            if (mounted) {
+                              context.go('/login', extra: true);
+                            }
+                          }
                         }
                       },
                       child: const Text(
