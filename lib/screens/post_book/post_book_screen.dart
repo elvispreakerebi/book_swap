@@ -80,7 +80,7 @@ class _PostBookScreenState extends State<PostBookScreen> {
         title: const Text('Post a Book'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () => context.go('/home'),
         ),
       ),
       body: Stack(
