@@ -4,6 +4,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/home/home_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
+import '../screens/post_book/post_book_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -41,6 +42,10 @@ class AppRouter {
           appBar: AppBar(title: const Text('Settings')),
           body: const Center(child: Text('Settings')),
         ),
+      ),
+      GoRoute(
+        path: '/post_book',
+        builder: (context, state) => const PostBookScreen(),
       ),
     ],
   );

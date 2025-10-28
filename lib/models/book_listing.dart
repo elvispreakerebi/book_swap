@@ -5,6 +5,7 @@ class BookListing {
   final String ownerId;
   final String title;
   final String author;
+  final String swapFor;
   final BookCondition condition;
   final String coverUrl; // Firebase Storage URL or network image
   final String description;
@@ -16,6 +17,7 @@ class BookListing {
     required this.ownerId,
     required this.title,
     required this.author,
+    required this.swapFor,
     required this.condition,
     required this.coverUrl,
     required this.description,
@@ -29,6 +31,7 @@ class BookListing {
       ownerId: json['ownerId'] as String,
       title: json['title'] as String,
       author: json['author'] as String,
+      swapFor: json['swapFor'] as String? ?? '',
       condition: BookCondition.values.firstWhere(
         (e) => e.name == (json['condition'] as String?),
         orElse: () => BookCondition.Good,
@@ -46,6 +49,7 @@ class BookListing {
       'ownerId': ownerId,
       'title': title,
       'author': author,
+      'swapFor': swapFor,
       'condition': condition.name,
       'coverUrl': coverUrl,
       'description': description,
@@ -59,6 +63,7 @@ class BookListing {
     String? ownerId,
     String? title,
     String? author,
+    String? swapFor,
     BookCondition? condition,
     String? coverUrl,
     String? description,
@@ -70,6 +75,7 @@ class BookListing {
       ownerId: ownerId ?? this.ownerId,
       title: title ?? this.title,
       author: author ?? this.author,
+      swapFor: swapFor ?? this.swapFor,
       condition: condition ?? this.condition,
       coverUrl: coverUrl ?? this.coverUrl,
       description: description ?? this.description,

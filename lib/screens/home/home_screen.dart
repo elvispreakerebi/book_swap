@@ -26,6 +26,19 @@ class _HomeScreenState extends State<HomeScreen> {
     super.didChangeDependencies();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    // Listen for real-time Firestore updates.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final listingsProvider = Provider.of<BookListingsProvider>(
+        context,
+        listen: false,
+      );
+      listingsProvider.startListening();
+    });
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -54,6 +67,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final isEmpty = listingsProvider.isEmpty;
     return Scaffold(
       appBar: AppBar(title: const Text('Browse Listings'), centerTitle: false),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.pink,
+        onPressed: () => context.go('/post_book'),
+        child: const Icon(Icons.add, size: 31, color: Colors.white),
+      ),
       body: isEmpty
           ? _buildEmptyState()
           : ListView.separated(
@@ -73,7 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: Colors.black54,
         onTap: (idx) {
           setState(() => _selectedIndex = idx);
-          // Handle navigation to different root screens here!
           switch (idx) {
             case 0:
               context.go('/home');
