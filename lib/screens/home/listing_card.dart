@@ -3,11 +3,15 @@ import '../../models/book_listing.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:go_router/go_router.dart';
 
 class BookListingCard extends StatelessWidget {
   final BookListing listing;
-  const BookListingCard({super.key, required this.listing});
+  final void Function()? onTap;
+  const BookListingCard({
+    super.key,
+    required this.listing,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,12 +21,7 @@ class BookListingCard extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     final isOwner = user != null && user.uid == listing.ownerId;
     return InkWell(
-      onTap: () {
-        // Use GoRouter context.go to ensure correct navigation
-        if (listing.id.isNotEmpty) {
-          context.push('/listing/${listing.id}');
-        }
-      },
+      onTap: onTap,
       child: Container(
         color: Colors.white,
         child: Padding(

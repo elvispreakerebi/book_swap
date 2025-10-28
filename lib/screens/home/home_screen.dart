@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
-import '../../models/book_listing.dart';
 import 'listing_card.dart';
 import 'package:provider/provider.dart';
 import '../../providers/book_listings_provider.dart';
@@ -77,8 +76,14 @@ class _HomeScreenState extends State<HomeScreen> {
           : ListView.separated(
               padding: const EdgeInsets.all(12),
               itemCount: listings.length,
-              itemBuilder: (context, idx) =>
-                  BookListingCard(listing: listings[idx]),
+              itemBuilder: (context, idx) => BookListingCard(
+                listing: listings[idx],
+                onTap: () {
+                  final id = listings[idx].id;
+                  print('BookListingCard tap: Navigating to /listing/$id');
+                  if (id.isNotEmpty) context.push('/listing/$id');
+                },
+              ),
               separatorBuilder: (context, idx) => const Divider(
                 height: 1,
                 color: Color(0xFFEAEAEA),

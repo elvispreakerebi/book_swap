@@ -26,16 +26,27 @@ class BookListing {
   });
 
   factory BookListing.fromJson(Map<String, dynamic> json) {
+    BookCondition conditionValue = BookCondition.Good;
+    final cond = json['condition'];
+    if (cond is String) {
+      conditionValue = BookCondition.values.firstWhere(
+        (e) => e.name == cond,
+        orElse: () => BookCondition.Good,
+      );
+    } else if (cond is int) {
+      if (cond >= 0 && cond < BookCondition.values.length) {
+        conditionValue = BookCondition.values[cond];
+      }
+    } else if (cond is BookCondition) {
+      conditionValue = cond;
+    }
     return BookListing(
       id: json['id'] as String,
       ownerId: json['ownerId'] as String,
       title: json['title'] as String,
       author: json['author'] as String,
       swapFor: json['swapFor'] as String? ?? '',
-      condition: BookCondition.values.firstWhere(
-        (e) => e.name == (json['condition'] as String?),
-        orElse: () => BookCondition.Good,
-      ),
+      condition: conditionValue,
       coverUrl: json['coverUrl'] as String,
       description: json['description'] as String? ?? '',
       createdAt: DateTime.parse(json['createdAt'] as String),

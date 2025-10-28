@@ -3,10 +3,33 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/book_listings_provider.dart';
+import '../../models/book_listing.dart';
 
 class ListingDetailsScreen extends StatelessWidget {
   final String listingId;
   const ListingDetailsScreen({super.key, required this.listingId});
+
+  String _bookConditionText(BookCondition condition) {
+    try {
+      // Dart 2.15+ enums
+      // ignore: invalid_use_of_protected_member
+      // ignore: invalid_use_of_internal_member
+      return (condition as dynamic).name != null
+          ? (condition as dynamic).name.toString().replaceAll(
+              'LikeNew',
+              'Like New',
+            )
+          : condition
+                .toString()
+                .replaceAll('BookCondition.', '')
+                .replaceAll('LikeNew', 'Like New');
+    } catch (_) {
+      return condition
+          .toString()
+          .replaceAll('BookCondition.', '')
+          .replaceAll('LikeNew', 'Like New');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +138,7 @@ class ListingDetailsScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 15, color: Colors.black87),
               ),
               Text(
-                listing.condition.name.replaceAll('LikeNew', 'Like New'),
+                _bookConditionText(listing.condition),
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Colors.pink,
