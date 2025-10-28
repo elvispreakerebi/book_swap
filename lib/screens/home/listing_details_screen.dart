@@ -41,6 +41,7 @@ class ListingDetailsScreen extends StatelessWidget {
     BuildContext context,
     SwapOffersProvider provider,
     String listingId,
+    BookListing listing,
   ) async {
     await provider.fetchListingOffers(listingId);
     showModalBottomSheet(
@@ -125,6 +126,28 @@ class ListingDetailsScreen extends StatelessWidget {
                                             .collection('swap_offers')
                                             .doc(offer.offerId)
                                             .update({'state': 'accepted'});
+                                        // Send notification to user
+                                        final notif = AppNotification(
+                                          id: DateTime.now()
+                                              .millisecondsSinceEpoch
+                                              .toString(),
+                                          userId: offer.fromUserId,
+                                          type:
+                                              AppNotificationType.offerAccepted,
+                                          title: 'Swap Offer Accepted',
+                                          body:
+                                              'Your swap offer for ${listing.title} was accepted.',
+                                          data: {
+                                            'listingId': listing.id,
+                                            'offerId': offer.offerId,
+                                          },
+                                          read: false,
+                                          createdAt: DateTime.now(),
+                                        );
+                                        await Provider.of<
+                                              NotificationsProvider
+                                            >(context, listen: false)
+                                            .createNotification(notif);
                                         setState(() {
                                           provider.listingOffers[provider
                                               .listingOffers
@@ -156,6 +179,28 @@ class ListingDetailsScreen extends StatelessWidget {
                                             .collection('swap_offers')
                                             .doc(offer.offerId)
                                             .update({'state': 'cancelled'});
+                                        // Send notification to user
+                                        final notif = AppNotification(
+                                          id: DateTime.now()
+                                              .millisecondsSinceEpoch
+                                              .toString(),
+                                          userId: offer.fromUserId,
+                                          type:
+                                              AppNotificationType.offerRejected,
+                                          title: 'Swap Offer Rejected',
+                                          body:
+                                              'Your swap offer for ${listing.title} was rejected.',
+                                          data: {
+                                            'listingId': listing.id,
+                                            'offerId': offer.offerId,
+                                          },
+                                          read: false,
+                                          createdAt: DateTime.now(),
+                                        );
+                                        await Provider.of<
+                                              NotificationsProvider
+                                            >(context, listen: false)
+                                            .createNotification(notif);
                                         setState(() {
                                           provider.listingOffers[provider
                                               .listingOffers
@@ -273,6 +318,7 @@ class ListingDetailsScreen extends StatelessWidget {
                             context,
                             swapOffersProvider,
                             listing.id,
+                            listing,
                           );
                         },
                         child: const Text(
