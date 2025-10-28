@@ -64,4 +64,10 @@ class BookListingsProvider with ChangeNotifier {
     );
     await doc.set(listing.toJson());
   }
+
+  Future<void> deleteListing(String id) async {
+    await _firestore.collection('listings').doc(id).delete();
+    _listings.removeWhere((l) => l.id == id);
+    notifyListeners();
+  }
 }

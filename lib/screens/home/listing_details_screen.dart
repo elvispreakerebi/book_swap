@@ -76,27 +76,102 @@ class ListingDetailsScreen extends StatelessWidget {
                   icon: const Icon(Icons.delete),
                   tooltip: 'Delete',
                   onPressed: () async {
-                    final confirmed = await showDialog<bool>(
+                    showModalBottomSheet(
                       context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Are you sure?'),
-                        content: const Text('Delete this listing permanently?'),
-                        actions: [
-                          TextButton(
-                            child: const Text('Cancel'),
-                            onPressed: () => Navigator.of(context).pop(false),
-                          ),
-                          ElevatedButton(
-                            child: const Text('Delete'),
-                            onPressed: () => Navigator.of(context).pop(true),
-                          ),
-                        ],
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(16),
+                        ),
                       ),
+                      builder: (context) {
+                        bool isLoading = false;
+                        return StatefulBuilder(
+                          builder: (context, setState) => Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 24,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Text(
+                                  'Delete Listing',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 19,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Are you sure you want to delete this listing? This action cannot be undone.',
+                                ),
+                                const SizedBox(height: 18),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        child: const Text('Cancel'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.pink,
+                                        ),
+                                        onPressed: isLoading
+                                            ? null
+                                            : () async {
+                                                setState(
+                                                  () => isLoading = true,
+                                                );
+                                                await Provider.of<
+                                                      BookListingsProvider
+                                                    >(context, listen: false)
+                                                    .deleteListing(listing.id);
+                                                setState(
+                                                  () => isLoading = false,
+                                                );
+                                                Navigator.of(
+                                                  context,
+                                                ).pop(); // Close bottom sheet
+                                                context.go(
+                                                  '/home',
+                                                  extra: {
+                                                    'deleted': true,
+                                                    'title': listing.title,
+                                                  },
+                                                );
+                                              },
+                                        child: isLoading
+                                            ? const SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      color: Colors.white,
+                                                      strokeWidth: 2.3,
+                                                    ),
+                                              )
+                                            : const Text(
+                                                'Delete',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     );
-                    if (confirmed == true) {
-                      // Implement delete logic through provider
-                      // Optionally, pop twice to exit details
-                    }
                   },
                 ),
               ]

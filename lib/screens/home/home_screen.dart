@@ -64,6 +64,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final listingsProvider = Provider.of<BookListingsProvider>(context);
     final listings = listingsProvider.listings;
     final isEmpty = listingsProvider.isEmpty;
+    // Show deletion success snackbar if routed from details page with extra data
+    final extra = GoRouterState.of(context).extra;
+    if (extra is Map && extra['deleted'] == true) {
+      final title = extra['title'] ?? 'Listing';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$title deleted successfully!'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      });
+    }
     return Scaffold(
       appBar: AppBar(title: const Text('Listings'), centerTitle: false),
       floatingActionButton: FloatingActionButton(
