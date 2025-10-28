@@ -1,4 +1,3 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
@@ -15,9 +14,7 @@ class AuthService {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      // Handle errors
-      print(e.message);
-      return null;
+      throw Exception(e.message ?? 'Failed to register');
     }
   }
 
@@ -29,9 +26,7 @@ class AuthService {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      // Handle errors
-      print(e.message);
-      return null;
+      throw Exception(e.message ?? 'Failed to login');
     }
   }
 
