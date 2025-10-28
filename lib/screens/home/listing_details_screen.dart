@@ -121,12 +121,24 @@ class ListingDetailsScreen extends StatelessWidget {
                                         minimumSize: const Size(0, 38),
                                       ),
                                       onPressed: () async {
-                                        // Accept: update state in Firestore
+                                        // Accept button pressed
+                                        // Accept this offer
                                         await FirebaseFirestore.instance
                                             .collection('swap_offers')
                                             .doc(offer.offerId)
                                             .update({'state': 'accepted'});
-                                        // Send notification to user
+                                        // Fetch displayName for the snack
+                                        final userSnap = await FirebaseFirestore
+                                            .instance
+                                            .collection('users')
+                                            .doc(offer.fromUserId)
+                                            .get();
+                                        final displayName =
+                                            (userSnap.data()?['displayName']
+                                                    as String?)
+                                                ?.trim() ??
+                                            'user';
+                                        // Send notification to initiator
                                         final notif = AppNotification(
                                           id: DateTime.now()
                                               .millisecondsSinceEpoch
@@ -148,21 +160,91 @@ class ListingDetailsScreen extends StatelessWidget {
                                               NotificationsProvider
                                             >(context, listen: false)
                                             .createNotification(notif);
+
+                                        // Reject all other pending offers on this listing and notify their users
+                                        final snapshot = await FirebaseFirestore
+                                            .instance
+                                            .collection('swap_offers')
+                                            .where(
+                                              'listingId',
+                                              isEqualTo: listing.id,
+                                            )
+                                            .get();
+                                        for (var doc in snapshot.docs) {
+                                          final data = doc.data();
+                                          if (doc.id != offer.offerId &&
+                                              data['state'] == 'pending') {
+                                            await doc.reference.update({
+                                              'state': 'cancelled',
+                                            });
+                                            final theirUserSnap =
+                                                await FirebaseFirestore.instance
+                                                    .collection('users')
+                                                    .doc(data['fromUserId'])
+                                                    .get();
+                                            final theirDisplayName =
+                                                (theirUserSnap
+                                                            .data()?['displayName']
+                                                        as String?)
+                                                    ?.trim() ??
+                                                'user';
+                                            final rejectedNotif = AppNotification(
+                                              id: DateTime.now()
+                                                  .millisecondsSinceEpoch
+                                                  .toString(),
+                                              userId: data['fromUserId'],
+                                              type: AppNotificationType
+                                                  .offerRejected,
+                                              title: 'Swap Offer Rejected',
+                                              body:
+                                                  'Your swap offer for ${listing.title} was rejected.',
+                                              data: {
+                                                'listingId': listing.id,
+                                                'offerId': doc.id,
+                                              },
+                                              read: false,
+                                              createdAt: DateTime.now(),
+                                            );
+                                            await Provider.of<
+                                                  NotificationsProvider
+                                                >(context, listen: false)
+                                                .createNotification(
+                                                  rejectedNotif,
+                                                );
+                                          }
+                                        }
+
+                                        // Locally update state so UI disables all accept buttons, etc
                                         setState(() {
-                                          provider.listingOffers[provider
-                                              .listingOffers
-                                              .indexWhere(
-                                                (o) =>
-                                                    o.offerId == offer.offerId,
-                                              )] = offer.copyWith(
-                                            state: SwapOfferState.accepted,
-                                          );
+                                          for (
+                                            int i = 0;
+                                            i < provider.listingOffers.length;
+                                            i++
+                                          ) {
+                                            final o = provider.listingOffers[i];
+                                            if (o.offerId == offer.offerId) {
+                                              provider.listingOffers[i] = o
+                                                  .copyWith(
+                                                    state:
+                                                        SwapOfferState.accepted,
+                                                  );
+                                            } else if (o.state ==
+                                                SwapOfferState.pending) {
+                                              provider.listingOffers[i] = o
+                                                  .copyWith(
+                                                    state: SwapOfferState
+                                                        .cancelled,
+                                                  );
+                                            }
+                                          }
                                         });
                                         ScaffoldMessenger.of(
                                           context,
                                         ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Offer accepted.'),
+                                          SnackBar(
+                                            content: Text(
+                                              'Offer successfully accepted. $displayName has been notified.',
+                                            ),
                                           ),
                                         );
                                       },
@@ -179,7 +261,17 @@ class ListingDetailsScreen extends StatelessWidget {
                                             .collection('swap_offers')
                                             .doc(offer.offerId)
                                             .update({'state': 'cancelled'});
-                                        // Send notification to user
+                                        final userSnap = await FirebaseFirestore
+                                            .instance
+                                            .collection('users')
+                                            .doc(offer.fromUserId)
+                                            .get();
+                                        final displayName =
+                                            (userSnap.data()?['displayName']
+                                                    as String?)
+                                                ?.trim() ??
+                                            'user';
+                                        // Send notification to initiator
                                         final notif = AppNotification(
                                           id: DateTime.now()
                                               .millisecondsSinceEpoch
@@ -214,8 +306,10 @@ class ListingDetailsScreen extends StatelessWidget {
                                         ScaffoldMessenger.of(
                                           context,
                                         ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Offer cancelled.'),
+                                          SnackBar(
+                                            content: Text(
+                                              'Offer successfully rejected. $displayName has been notified.',
+                                            ),
                                           ),
                                         );
                                       },
@@ -299,35 +393,63 @@ class ListingDetailsScreen extends StatelessWidget {
             // Owner: see pending offers (if any)
             bottomBar = FutureBuilder(
               future: swapOffersProvider.fetchListingOffers(listing.id),
-              builder: (context, snapshot) =>
-                  (swapOffersProvider.listingOffers.isNotEmpty
-                  ? Container(
-                      width: double.infinity,
-                      color: Colors.white,
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.pink,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () {
-                          _showSwapOffersModal(
-                            context,
-                            swapOffersProvider,
-                            listing.id,
-                            listing,
-                          );
-                        },
-                        child: const Text(
-                          'See Swap Offers',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
+              builder: (context, snapshot) {
+                final offers = swapOffersProvider.listingOffers;
+                final acceptedOffer = offers.any(
+                  (offer) => offer.state == SwapOfferState.accepted,
+                );
+                if (acceptedOffer) {
+                  // Green button: swap offer accepted, cannot accept more
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                    )
-                  : SizedBox.shrink()),
+                      onPressed: null, // disabled
+                      child: const Text(
+                        'Swap offer accepted',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                  );
+                }
+                if (offers.isNotEmpty) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.pink,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        _showSwapOffersModal(
+                          context,
+                          swapOffersProvider,
+                          listing.id,
+                          listing,
+                        );
+                      },
+                      child: const Text(
+                        'See Swap Offers',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
             );
           } else {
             // Non-owner: show Swap button (disabled if offer exists)
@@ -503,6 +625,46 @@ class ListingDetailsScreen extends StatelessWidget {
                                                       setState(
                                                         () => isLoading = true,
                                                       );
+                                                      // Prevent delete if ANY offers for this listing exist AND some are pending or accepted
+                                                      final swapOffersProvider =
+                                                          Provider.of<
+                                                            SwapOffersProvider
+                                                          >(
+                                                            context,
+                                                            listen: false,
+                                                          );
+                                                      await swapOffersProvider
+                                                          .fetchListingOffers(
+                                                            listing.id,
+                                                          );
+                                                      final hasUnresolved = swapOffersProvider
+                                                          .listingOffers
+                                                          .any(
+                                                            (o) =>
+                                                                o.state ==
+                                                                    SwapOfferState
+                                                                        .pending ||
+                                                                o.state ==
+                                                                    SwapOfferState
+                                                                        .accepted,
+                                                          );
+                                                      final hasReceivedOffer =
+                                                          swapOffersProvider
+                                                              .listingOffers
+                                                              .isNotEmpty;
+                                                      if (hasReceivedOffer &&
+                                                          hasUnresolved) {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                              'Cannot delete listing while there are pending or accepted swap offers. Please reject or resolve all offers first.',
+                                                            ),
+                                                          ),
+                                                        );
+                                                        return;
+                                                      }
                                                       // Delete from Cloudinary first, then Firestore
                                                       try {
                                                         await CloudinaryService()
