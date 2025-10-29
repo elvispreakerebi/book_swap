@@ -85,34 +85,51 @@ class ListingDetailsScreen extends StatelessWidget {
                             vertical: 15,
                             horizontal: 12,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              FutureBuilder<
-                                DocumentSnapshot<Map<String, dynamic>>
-                              >(
-                                future: FirebaseFirestore.instance
-                                    .collection('users')
-                                    .doc(offer.fromUserId)
-                                    .get(),
-                                builder: (context, snap) {
-                                  final data = snap.data?.data();
-                                  final display =
-                                      data != null &&
-                                          (data['displayName'] as String?)
-                                                  ?.isNotEmpty ==
-                                              true
-                                      ? data['displayName']
-                                      : 'Unknown User';
-                                  return Text(
-                                    'From: $display',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 15,
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  FutureBuilder<
+                                    DocumentSnapshot<Map<String, dynamic>>
+                                  >(
+                                    future: FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(offer.fromUserId)
+                                        .get(),
+                                    builder: (context, snap) {
+                                      final data = snap.data?.data();
+                                      final display =
+                                          data != null &&
+                                              (data['displayName'] as String?)
+                                                      ?.isNotEmpty ==
+                                                  true
+                                          ? data['displayName']
+                                          : 'Unknown User';
+                                      return Text(
+                                        'From: $display',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 15,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.chat,
+                                      color: Colors.pink,
                                     ),
-                                  );
-                                },
+                                    tooltip: 'Chat',
+                                    onPressed: () {
+                                      // TODO: Implement chat for owner vs offer initiator
+                                    },
+                                  ),
+                                ],
                               ),
+                              const SizedBox(height: 10),
                               if (offer.state == SwapOfferState.pending)
                                 Row(
                                   children: [
@@ -191,20 +208,6 @@ class ListingDetailsScreen extends StatelessWidget {
                                                   await doc.reference.update({
                                                     'state': 'cancelled',
                                                   });
-                                                  final theirUserSnap =
-                                                      await FirebaseFirestore
-                                                          .instance
-                                                          .collection('users')
-                                                          .doc(
-                                                            data['fromUserId'],
-                                                          )
-                                                          .get();
-                                                  final theirDisplayName =
-                                                      (theirUserSnap
-                                                                  .data()?['displayName']
-                                                              as String?)
-                                                          ?.trim() ??
-                                                      'user';
                                                   final rejectedNotif = AppNotification(
                                                     id: DateTime.now()
                                                         .millisecondsSinceEpoch
@@ -380,7 +383,7 @@ class ListingDetailsScreen extends StatelessWidget {
                                     ),
                                   ],
                                 )
-                              else ...[
+                              else
                                 Text(
                                   offer.state == SwapOfferState.accepted
                                       ? 'Accepted'
@@ -398,7 +401,6 @@ class ListingDetailsScreen extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ],
                             ],
                           ),
                         ),
@@ -648,111 +650,103 @@ class ListingDetailsScreen extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              actions: isOwner
-                  ? [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        tooltip: 'Edit',
-                        onPressed: () {
-                          context.push(
-                            '/edit_book/${listing.id}',
-                            extra: listing,
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        tooltip: 'Delete',
-                        onPressed: () async {
-                          showModalBottomSheet(
-                            context: context,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(16),
+              actions: [
+                if (isOwner) ...[
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    tooltip: 'Edit',
+                    onPressed: () {
+                      context.push('/edit_book/${listing.id}', extra: listing);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    tooltip: 'Delete',
+                    onPressed: () async {
+                      showModalBottomSheet(
+                        context: context,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
+                        ),
+                        builder: (context) {
+                          bool isLoading = false;
+                          return StatefulBuilder(
+                            builder: (context, setState) => Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 24,
                               ),
-                            ),
-                            builder: (context) {
-                              bool isLoading = false;
-                              return StatefulBuilder(
-                                builder: (context, setState) => Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 24,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const Text(
+                                    'Delete Listing',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 19,
+                                    ),
                                   ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'Are you sure you want to delete this listing? This action cannot be undone.',
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Row(
                                     children: [
-                                      const Text(
-                                        'Delete Listing',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 19,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      const Text(
-                                        'Are you sure you want to delete this listing? This action cannot be undone.',
-                                      ),
-                                      const SizedBox(height: 18),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: OutlinedButton(
-                                              style: OutlinedButton.styleFrom(
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical: 16,
-                                                ),
-                                                side: BorderSide(
-                                                  color: Colors.pink,
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                              ),
-                                              onPressed: () =>
-                                                  Navigator.of(context).pop(),
-                                              child: const Text('Cancel'),
+                                      Expanded(
+                                        child: OutlinedButton(
+                                          style: OutlinedButton.styleFrom(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 16,
+                                            ),
+                                            side: BorderSide(
+                                              color: Colors.pink,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                           ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.pink,
-                                                minimumSize: Size.fromHeight(
-                                                  48,
-                                                ),
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical: 16,
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                              ),
-                                              onPressed: isLoading
-                                                  ? null
-                                                  : () async {
-                                                      setState(
-                                                        () => isLoading = true,
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          child: const Text('Cancel'),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.pink,
+                                            minimumSize: Size.fromHeight(48),
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 16,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          onPressed: isLoading
+                                              ? null
+                                              : () async {
+                                                  setState(
+                                                    () => isLoading = true,
+                                                  );
+                                                  // Prevent delete if ANY offers for this listing exist AND some are pending or accepted
+                                                  final swapOffersProvider =
+                                                      Provider.of<
+                                                        SwapOffersProvider
+                                                      >(context, listen: false);
+                                                  await swapOffersProvider
+                                                      .fetchListingOffers(
+                                                        listing.id,
                                                       );
-                                                      // Prevent delete if ANY offers for this listing exist AND some are pending or accepted
-                                                      final swapOffersProvider =
-                                                          Provider.of<
-                                                            SwapOffersProvider
-                                                          >(
-                                                            context,
-                                                            listen: false,
-                                                          );
-                                                      await swapOffersProvider
-                                                          .fetchListingOffers(
-                                                            listing.id,
-                                                          );
-                                                      final hasUnresolved = swapOffersProvider
+                                                  final hasUnresolved =
+                                                      swapOffersProvider
                                                           .listingOffers
                                                           .any(
                                                             (o) =>
@@ -763,84 +757,88 @@ class ListingDetailsScreen extends StatelessWidget {
                                                                     SwapOfferState
                                                                         .accepted,
                                                           );
-                                                      final hasReceivedOffer =
-                                                          swapOffersProvider
-                                                              .listingOffers
-                                                              .isNotEmpty;
-                                                      if (hasReceivedOffer &&
-                                                          hasUnresolved) {
-                                                        ScaffoldMessenger.of(
-                                                          context,
-                                                        ).showSnackBar(
-                                                          const SnackBar(
-                                                            content: Text(
-                                                              'Cannot delete listing while there are pending or accepted swap offers. Please reject or resolve all offers first.',
-                                                            ),
-                                                          ),
-                                                        );
-                                                        return;
-                                                      }
-                                                      // Delete from Cloudinary first, then Firestore
-                                                      try {
-                                                        await CloudinaryService()
-                                                            .deleteImage(
-                                                              listing.coverUrl,
-                                                            );
-                                                      } catch (_) {}
-                                                      await Provider.of<
-                                                            BookListingsProvider
-                                                          >(
-                                                            context,
-                                                            listen: false,
-                                                          )
-                                                          .deleteListing(
-                                                            listing.id,
-                                                          );
-                                                      setState(
-                                                        () => isLoading = false,
-                                                      );
-                                                      Navigator.of(
-                                                        context,
-                                                      ).pop(); // Close bottom sheet
-                                                      context.go(
-                                                        '/home',
-                                                        extra: {
-                                                          'deleted': true,
-                                                          'title':
-                                                              listing.title,
-                                                        },
-                                                      );
-                                                    },
-                                              child: isLoading
-                                                  ? const SizedBox(
-                                                      width: 24,
-                                                      height: 24,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                            color: Colors.white,
-                                                            strokeWidth: 2.3,
-                                                          ),
-                                                    )
-                                                  : const Text(
-                                                      'Delete',
-                                                      style: TextStyle(
-                                                        color: Colors.white,
+                                                  final hasReceivedOffer =
+                                                      swapOffersProvider
+                                                          .listingOffers
+                                                          .isNotEmpty;
+                                                  if (hasReceivedOffer &&
+                                                      hasUnresolved) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          'Cannot delete listing while there are pending or accepted swap offers. Please reject or resolve all offers first.',
+                                                        ),
                                                       ),
-                                                    ),
-                                            ),
-                                          ),
-                                        ],
+                                                    );
+                                                    return;
+                                                  }
+                                                  // Delete from Cloudinary first, then Firestore
+                                                  try {
+                                                    await CloudinaryService()
+                                                        .deleteImage(
+                                                          listing.coverUrl,
+                                                        );
+                                                  } catch (_) {}
+                                                  await Provider.of<
+                                                        BookListingsProvider
+                                                      >(context, listen: false)
+                                                      .deleteListing(
+                                                        listing.id,
+                                                      );
+                                                  setState(
+                                                    () => isLoading = false,
+                                                  );
+                                                  Navigator.of(
+                                                    context,
+                                                  ).pop(); // Close bottom sheet
+                                                  context.go(
+                                                    '/home',
+                                                    extra: {
+                                                      'deleted': true,
+                                                      'title': listing.title,
+                                                    },
+                                                  );
+                                                },
+                                          child: isLoading
+                                              ? const SizedBox(
+                                                  width: 24,
+                                                  height: 24,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        color: Colors.white,
+                                                        strokeWidth: 2.3,
+                                                      ),
+                                                )
+                                              : const Text(
+                                                  'Delete',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                        ),
                                       ),
                                     ],
                                   ),
-                                ),
-                              );
-                            },
+                                ],
+                              ),
+                            ),
                           );
                         },
-                      ),
-                    ]
-                  : null,
+                      );
+                    },
+                  ),
+                ],
+                if (!isOwner)
+                  IconButton(
+                    icon: const Icon(Icons.chat),
+                    tooltip: 'Chat',
+                    onPressed: () {
+                      // TODO: Implement chat navigation here
+                    },
+                  ),
+              ],
             ),
             body: ListView(
               padding: const EdgeInsets.all(20),
