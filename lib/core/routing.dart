@@ -10,6 +10,7 @@ import '../screens/post_book/edit_book_screen.dart';
 import '../models/book_listing.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/my_listings/my_listings_screen.dart';
+import '../screens/chat/chat_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -61,6 +62,14 @@ class AppRouter {
               ? state.extra as BookListing
               : null;
           return EditBookScreen(listingId: id, listing: listing);
+        },
+      ),
+      GoRoute(
+        path: '/chat/:listingId/:peerId',
+        builder: (context, state) {
+          final listingId = state.pathParameters['listingId']!;
+          final peerId = state.pathParameters['peerId']!;
+          return ChatScreen(listingId: listingId, peerId: peerId);
         },
       ),
     ],

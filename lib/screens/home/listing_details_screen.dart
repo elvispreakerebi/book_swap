@@ -124,7 +124,9 @@ class ListingDetailsScreen extends StatelessWidget {
                                     ),
                                     tooltip: 'Chat',
                                     onPressed: () {
-                                      // TODO: Implement chat for owner vs offer initiator
+                                      context.go(
+                                        '/chat/${listing.id}/${offer.fromUserId}',
+                                      );
                                     },
                                   ),
                                 ],
@@ -835,7 +837,7 @@ class ListingDetailsScreen extends StatelessWidget {
                     icon: const Icon(Icons.chat),
                     tooltip: 'Chat',
                     onPressed: () {
-                      // TODO: Implement chat navigation here
+                      context.go('/chat/${listing.id}/${listing.ownerId}');
                     },
                   ),
               ],
