@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/swap_offer.dart';
+import '../models/notification_model.dart';
 
 class SwapOffersProvider with ChangeNotifier {
   final _firestore = FirebaseFirestore.instance;
@@ -54,6 +55,23 @@ class SwapOffersProvider with ChangeNotifier {
       createdAt: DateTime.now(),
     );
     await doc.set(offer.toJson());
+
+    // Create notification for owner
+    final notification = AppNotification(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      userId: toUserId,
+      type: AppNotificationType.offerMade,
+      title: 'New Swap Offer',
+      body: 'You have received a new swap offer.',
+      data: {'listingId': listingId, 'offerId': doc.id},
+      read: false,
+      createdAt: DateTime.now(),
+    );
+    await FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(notification.id)
+        .set(notification.toJson());
+
     await fetchMySentOffers();
     return true;
   }
