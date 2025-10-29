@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart' as appAuth;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../ui/app_bottom_nav.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -162,9 +163,13 @@ class SettingsScreen extends StatelessWidget {
                                     if (user != null &&
                                         user.displayName !=
                                             nameController.text.trim()) {
-                                      await user.updateDisplayName(
-                                        nameController.text.trim(),
-                                      );
+                                      final newName = nameController.text
+                                          .trim();
+                                      await user.updateDisplayName(newName);
+                                      await FirebaseFirestore.instance
+                                          .collection('users')
+                                          .doc(user.uid)
+                                          .update({'displayName': newName});
                                     }
                                     // Change password if filled
                                     if (currentPwController.text.isNotEmpty &&
