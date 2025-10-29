@@ -142,68 +142,72 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 Divider(height: 1),
                 Padding(
-                  padding: const EdgeInsets.only(
-                    right: 8,
-                    left: 8,
-                    bottom: 8,
-                    top: 2,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 16,
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _textController,
-                          decoration: const InputDecoration(
-                            hintText: 'Type a message...',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _textController,
+                    builder: (context, value, _) {
+                      final enabled = value.text.trim().isNotEmpty;
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _textController,
+                              decoration: const InputDecoration(
+                                hintText: 'Type a message...',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(12),
+                                  ),
+                                  borderSide: BorderSide(color: Colors.pink),
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
                               ),
-                              borderSide: BorderSide(color: Colors.pink),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: _textController.text.trim().isEmpty
-                            ? null
-                            : () async {
-                                final content = _textController.text.trim();
-                                await Provider.of<ChatProvider>(
-                                  context,
-                                  listen: false,
-                                ).sendMessage(content);
-                                _textController.clear();
-                                Future.delayed(
-                                  const Duration(milliseconds: 150),
-                                  () {
-                                    _scrollController.animateTo(
-                                      _scrollController
-                                          .position
-                                          .maxScrollExtent,
-                                      duration: const Duration(
-                                        milliseconds: 200,
-                                      ),
-                                      curve: Curves.easeOut,
+                          const SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: enabled
+                                ? () async {
+                                    final content = _textController.text.trim();
+                                    await Provider.of<ChatProvider>(
+                                      context,
+                                      listen: false,
+                                    ).sendMessage(content);
+                                    _textController.clear();
+                                    Future.delayed(
+                                      const Duration(milliseconds: 150),
+                                      () {
+                                        _scrollController.animateTo(
+                                          _scrollController
+                                              .position
+                                              .maxScrollExtent,
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
+                                          curve: Curves.easeOut,
+                                        );
+                                      },
                                     );
-                                  },
-                                );
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.pink,
-                          minimumSize: const Size(48, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.pink,
+                              minimumSize: const Size(48, 48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Icon(Icons.send, color: Colors.white),
                           ),
-                        ),
-                        child: const Icon(Icons.send, color: Colors.white),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
