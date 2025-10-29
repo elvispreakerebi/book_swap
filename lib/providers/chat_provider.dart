@@ -25,7 +25,7 @@ class ChatProvider with ChangeNotifier {
     _firestore
         .collection('chat_messages')
         .where('listingId', isEqualTo: listingId)
-        .where('peerIds', arrayContainsAny: [userId, peerId])
+        .where('peerIds', arrayContains: userId)
         .orderBy('createdAt')
         .snapshots()
         .listen((snapshot) {

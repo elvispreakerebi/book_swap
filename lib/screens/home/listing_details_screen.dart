@@ -381,7 +381,7 @@ class ListingDetailsScreen extends StatelessWidget {
                                                 strokeWidth: 2.2,
                                               ),
                                             )
-                                          : const Text('Cancel'),
+                                          : const Text('Reject'),
                                     ),
                                   ],
                                 )
