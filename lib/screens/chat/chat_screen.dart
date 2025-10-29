@@ -110,14 +110,14 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: isMe
-                                        ? Colors.yellow[700]
+                                        ? Colors.pink[700]
                                         : Color(0xFF191939),
                                     borderRadius: BorderRadius.circular(13),
                                   ),
                                   child: Text(
                                     m.content,
                                     style: TextStyle(
-                                      color: isMe ? Colors.black : Colors.white,
+                                      color: isMe ? Colors.white : Colors.white,
                                       fontSize: 16,
                                     ),
                                   ),
