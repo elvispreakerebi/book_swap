@@ -50,6 +50,9 @@ class ChatProvider with ChangeNotifier {
       read: false,
       createdAt: DateTime.now(),
     );
+    // Add message locally for instant UI update
+    _messages.add(msg);
+    notifyListeners();
     await doc.set({
       ...msg.toJson(),
       'peerIds': [user.uid, peerId],
