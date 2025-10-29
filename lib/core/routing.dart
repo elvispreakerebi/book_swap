@@ -8,6 +8,7 @@ import '../screens/post_book/post_book_screen.dart';
 import '../screens/home/listing_details_screen.dart';
 import '../screens/post_book/edit_book_screen.dart';
 import '../models/book_listing.dart';
+import '../screens/settings/settings_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -48,10 +49,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/settings',
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(title: const Text('Settings')),
-          body: const Center(child: Text('Settings')),
-        ),
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/post_book',

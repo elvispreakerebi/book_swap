@@ -7,6 +7,7 @@ import '../../providers/book_listings_provider.dart';
 import '../../providers/notifications_provider.dart';
 import '../../models/notification_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../ui/app_bottom_nav.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -324,10 +325,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 thickness: 1.2,
               ),
             ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: AppBottomNav(
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.pink,
-        unselectedItemColor: Colors.black54,
         onTap: (idx) {
           setState(() => _selectedIndex = idx);
           switch (idx) {
@@ -338,28 +337,10 @@ class _HomeScreenState extends State<HomeScreen> {
               context.go('/my_listings');
               break;
             case 2:
-              context.go('/chats');
-              break;
-            case 3:
               context.go('/settings');
               break;
           }
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book),
-            label: 'My listings',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chats',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
       ),
     );
   }
