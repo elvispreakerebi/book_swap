@@ -129,7 +129,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
                 ),
                 builder: (context) {
-                  final notifications = notificationsProvider.notifications;
+                  final notifications = List<AppNotification>.from(
+                    notificationsProvider.notifications,
+                  );
+                  notifications.sort(
+                    (a, b) => b.createdAt.compareTo(a.createdAt),
+                  );
                   return SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
